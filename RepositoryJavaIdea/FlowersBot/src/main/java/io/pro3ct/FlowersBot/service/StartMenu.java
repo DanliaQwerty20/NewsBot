@@ -10,16 +10,19 @@ import java.io.FileNotFoundException;
 
 @Component
 @Slf4j
+
 public class StartMenu {
 
 
     private MyFlowersTelegramBot bot;
 
+    private SendMessage sendMessage;
     private CreateBoxPay boxPay;
     private CreateNewBouquet createNewBouquet;
 
-    public StartMenu(@Lazy MyFlowersTelegramBot bot, CreateBoxPay boxPay, CreateNewBouquet createNewBouquet){
+    public StartMenu(@Lazy MyFlowersTelegramBot bot, SendMessage sendMessage, CreateBoxPay boxPay, CreateNewBouquet createNewBouquet){
         this.bot=bot;
+        this.sendMessage = sendMessage;
         this.boxPay = boxPay;
         this.createNewBouquet = createNewBouquet;
     }
@@ -28,11 +31,10 @@ public class StartMenu {
             case "Товар":
                 // Логика для обработки нажатия кнопки "Товар"
                 log.info("Зашли в товар:");
-                for (int i=1;i<=2; i++) {
-                    bot.sendBouquetImage(chatId, "src/main/resources/static/img/flowers"+i+".jpg");
-                    createNewBouquet.createBouquet(i,chatId);
-                    boxPay.create(chatId);
-                }
+                sendMessage.send(chatId);
+                boxPay.create(chatId);
+
+
                 break;
             case "О нас":
                 // Логика для обработки нажатия кноп
@@ -48,5 +50,6 @@ public class StartMenu {
                 break;
         }
     }
+
 
 }

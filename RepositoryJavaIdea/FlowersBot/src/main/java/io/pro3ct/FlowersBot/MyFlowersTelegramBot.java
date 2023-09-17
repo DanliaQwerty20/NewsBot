@@ -1,6 +1,8 @@
 package io.pro3ct.FlowersBot;
 
 import io.pro3ct.FlowersBot.AppConfig.BotConfig;
+import io.pro3ct.FlowersBot.model.User;
+import io.pro3ct.FlowersBot.repository.UserRepository;
 import io.pro3ct.FlowersBot.service.CreateStartMenu;
 import io.pro3ct.FlowersBot.service.StartMenu;
 import lombok.extern.slf4j.Slf4j;
@@ -8,13 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.*;
+import java.io.FileNotFoundException;
 
 
 @Component
@@ -22,6 +23,8 @@ import java.io.*;
 public class MyFlowersTelegramBot extends TelegramLongPollingBot {
     @Autowired
     private final BotConfig botConfig;
+    @Autowired
+    private UserRepository userRepository;
     @Autowired
     private final CreateStartMenu menu;
 
@@ -55,9 +58,12 @@ public class MyFlowersTelegramBot extends TelegramLongPollingBot {
             long chatId=update.getMessage().getChatId();
             switch (messageText){
                 case "/start":
+                    registerUser(update.getMessage());
                     startCommandReceived(chatId,update.getMessage().getChat().getFirstName(),update.getMessage().getChat().getLastName());
                     ReplyKeyboardMarkup replyMarkup = menu.createMenu();
                     sendToMessage(chatId, replyMarkup);
+
+
                     break;
                 default:
                     try {
@@ -73,34 +79,22 @@ public class MyFlowersTelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void registerUser(Message message) {
+        if(userRepository.findById(message.getChatId()).isEmpty()){
+            var chatId=message.getChatId();
+            var chat=message.getChat();
 
-    public void sendBouquetImage(long chatId, String imagePath) throws FileNotFoundException {
-        //получаем название фотографии и оправляем ее через внутренний метод execute
-        File imageFile = new File(imagePath);
-        String imgPhoto = imageFile.getName();
+            User user=new User();
+            user.setChatId(chatId);
+            user.setFirstName(chat.getFirstName());
+            user.setLastName(chat.getLastName());
 
-        InputStream imageStream = new FileInputStream(imageFile);
-        InputFile inputFile = new InputFile(imageStream, imgPhoto);
-
-
-        SendPhoto sendPhoto = new SendPhoto();
-        sendPhoto.setPhoto(inputFile);
-
-        sendPhoto.setChatId(String.valueOf(chatId));
-
-        try {
-            execute(sendPhoto);
-            log.info("отправляем фотки букетов");
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                imageStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            userRepository.save(user);
+            log.info("user save: "+ user);
         }
     }
+
+
     private void sendToMessage(long chatId, ReplyKeyboardMarkup replyMarkup) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
