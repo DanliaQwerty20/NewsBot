@@ -1,7 +1,10 @@
 package io.pro3ct.FlowersBot.service;
 
 import io.pro3ct.FlowersBot.MyFlowersTelegramBot;
+import io.pro3ct.FlowersBot.model.Bouquet;
+import io.pro3ct.FlowersBot.repository.BouquetRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMediaGroup;
@@ -19,6 +22,8 @@ import java.util.List;
 @Component
 @Slf4j
 public class SendMessage {
+    @Autowired
+    private BouquetRepository bouquetRepository;
 
     MyFlowersTelegramBot bot;
     public SendMessage(@Lazy MyFlowersTelegramBot bot) {
@@ -29,6 +34,8 @@ public class SendMessage {
         sendMediaGroup.setChatId(String.valueOf(chatId));
         List<InputMedia> mediaGroup = new ArrayList<>();
         log.info("зашли в отправку сообщений");
+
+
 
         File imageFile1 = new File("src/main/resources/static/img/20230731_172942.jpg");
         String imgPhoto1 = imageFile1.getName();
@@ -51,8 +58,7 @@ public class SendMessage {
         //
         File imageFile3 = new File("src/main/resources/static/img/20230731_173015.jpg");
         String imgPhoto3 = imageFile3.getName();
-        InputStream imageStream3 = new FileInputStream(imageFile3);
-
+        InputStream imageStream3 = new FileInputStream(new File("src/main/resources/static/img/20230731_173015.jpg"));
 
         log.info("добавили в input фотки");
         // Добавление фотографий в группу медиа
@@ -80,6 +86,36 @@ public class SendMessage {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+
+
+    }
+    public void send1(long chatId) throws FileNotFoundException{
+        //получаем список букетов
+        Iterable<Bouquet> employeesOptional = bouquetRepository.findAll();
+        //список букетов
+        List<InputMedia> mediaGroup = new ArrayList<>();
+        //добавили чат айди пользователя
+
+        for (Bouquet b : employeesOptional){
+            InputMediaPhoto inputMediaPhoto = new InputMediaPhoto();
+            inputMediaPhoto.setMedia(new File(b.getFilePath()), b.getFileName());
+            inputMediaPhoto.setCaption(b.getDescription());
+
+            mediaGroup.add(inputMediaPhoto);
+        }
+
+        SendMediaGroup sendMediaGroup = new SendMediaGroup();
+        sendMediaGroup.setChatId(String.valueOf(chatId));
+        sendMediaGroup.setMedias(mediaGroup);
+
+        try {
+            // Отправка группы медиа
+            bot.execute(sendMediaGroup);
+            log.info("отправили фотки");
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

@@ -31,7 +31,7 @@ public class StartMenu {
             case "Товар":
                 // Логика для обработки нажатия кнопки "Товар"
                 log.info("Зашли в товар:");
-                sendMessage.send(chatId);
+                sendMessage.send1(chatId);
                 boxPay.create(chatId);
 
 
